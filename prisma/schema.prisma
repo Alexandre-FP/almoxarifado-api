@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SituacaoEnum {
+  ATIVO
+  INATIVO 
+  EXCLUIDO
+}
+
+enum SituacaoDaReserva {
+  DISPONIVEL
+  RESERVADO
+}
+
+model usuario {
+  id                        String          @id @default(uuid())
+  nome                      String          @db.VarChar(45)
+  email                     String          @unique @db.VarChar(45) 
+  senha                     String    
+  telefone                  String          @db.VarChar(32)         
+  criadoEm                  DateTime        @default(now())
+  alteradoEm                DateTime?       @updatedAt
+  situacao                  SituacaoEnum    @default(ATIVO)
+  permissao                 permissao       @relation(fields: [permissaoId], references: [id])
+  permissaoId               String
+  departamento              departamento    @relation(fields: [departamentoId], references: [id])
+  departamentoId            String
+  produto                   produto[]
+  produtoMandarUsuario      produto[]       @relation("usuarioMandarProduto")
+  reserva                   reserva[]
+  etapa                     etapa[]
+
+  @@map("usuarios")
+}
+
+model permissao {
+  id                    String          @id @default(uuid())
+  nome                  String          @db.VarChar(45)
+  descricao             String?         @db.VarChar(128)
+  criadoEm              DateTime        @default(now())
+  alteradoEm            DateTime?       @updatedAt
+  situacao              SituacaoEnum    @default(ATIVO)
+  usuario               usuario[]
+
+  @@map("permissoes")
+}
+
+model secretaria {
+  id                   String           @id @default(uuid())
+  nome                 String           @db.VarChar(128)
+  sigla                String           @db.VarChar(16)
+  criadoEm             DateTime         @default(now())
+  alteradoEm           DateTime?        @updatedAt
+  situacao             SituacaoEnum     @default(ATIVO)
+  departamento         departamento[]
+
+  @@map("secretarias")
+}
+
+model departamento {
+  id                   String           @id @default(uuid())
+  nome                 String           @db.VarChar(45)
+  criadoEm             DateTime         @default(now())
+  alteradoEm           DateTime?        @updatedAt
+  situacao             SituacaoEnum     @default(ATIVO)
+  secretaria           secretaria       @relation(fields: [secretariaId], references: [id])
+  secretariaId         String    
+  usuario              usuario[]
+
+  @@map("departamentos") 
+}
+
+model tipoProduto {
+  id                    String          @id @default(uuid())
+  nome                  String          @db.VarChar(45)
+  descricao             String?         @db.VarChar(128)
+  criadoEm              DateTime        @default(now())
+  alteradoEm            DateTime?       @updatedAt
+  situacao              SituacaoEnum    @default(ATIVO)
+  produto               produto[] 
+
+  @@map("tiposProdutos")
+}
+
+model produto {
+  id                      String            @id @default(uuid())
+  nome                    String            @db.VarChar(60)
+  descricao               String?           @db.VarChar(300)
+  numeroPatrimonio        String            @unique @db.VarChar(60) 
+  localOndeEncontra       String?           @db.VarChar(60)
+  numeroSerie             String?
+  concluido               Boolean           @default(false)
+  situacao                SituacaoEnum      @default(INATIVO)
+  situacaoDeReserva       SituacaoDaReserva @default(DISPONIVEL)
+  ordemCompra             String?
+  imagem                  String?      
+  produtoConcluido        Boolean           @default(false)   
+  criadoEm                DateTime          @default(now())
+  alteradoEm              DateTime?         @updatedAt  
+  concluidoEm             DateTime?         
+  tipoProduto             tipoProduto       @relation(fields: [tipoProdutoId], references: [id])
+  tipoProdutoId           String
+  usuario                 usuario           @relation(fields: [usuarioId], references: [id])
+  usuarioId               String
+  usuarioMandarProduto    usuario?          @relation("usuarioMandarProduto", fields: [usuarioMandarProduto_id], references: [id])
+  usuarioMandarProduto_id String?
+  reserva                 reserva[]
+  etapa                   etapa[]
+
+  @@map("produtos")
+}
+
+model etapa {
+  id                   String          @id @default(uuid())
+  descricao            String
+  produto              produto         @relation(fields: [produtoId], references: [id])
+  produtoId            String
+  usuario              usuario         @relation(fields: [usuarioId], references: [id])
+  usuarioId            String
+  criadoEm             DateTime        @default(now())
+  alteradoEm           DateTime?       @updatedAt
+  
+  @@map("etapas")
+}
+
+model reserva {
+  id                    String            @id @default(uuid())
+  situacaoDeReserva     SituacaoDaReserva @default(RESERVADO)
+  situacao              SituacaoEnum      @default(ATIVO) 
+  produto               produto           @relation(fields: [produtoId], references: [id])
+  produtoId             String
+  usuario               usuario           @relation(fields: [usuarioId], references: [id])
+  usuarioId             String
+  criadoEm              DateTime          @default(now())
+  alteradoEm            DateTime?         @updatedAt
+
+  @@map("reservas")
+}
+
+
+
